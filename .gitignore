@@ -1,0 +1,31 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+build/
+.vite/
+*.tsbuildinfo
+
+# Environment files (keep *.env.example tracked)
+.env
+.env.local
+.env.*.local
+
+# Runtime databases & vector stores
+server/data/
+*.db
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+*.lance
+
+# Cached ML models & temporary files
+.cache/
+models/
+*.log
+*.tmp
+
+# OS & editor artifacts
+.DS_Store
+Thumbs.db
