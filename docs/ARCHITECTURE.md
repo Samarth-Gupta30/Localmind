@@ -77,34 +77,40 @@ The reranker uses `Xenova/ms-marco-MiniLM-L-6-v2` through Transformers.js. Remot
 
 ## 4. Agent execution flow
 
+
 ```mermaid
 sequenceDiagram
     participant U as User
-    participant FE as React client
-    participant API as Agent controller
+    participant FE as React Client
+    participant API as Agent Controller
     participant LLM as Local Ollama
-    participant Store as Pending approval Map
-    participant Tool as ToolService
+    participant Store as Approval Store
+    participant Tool as Tool Service
 
     U->>FE: Submit agent request
-    FE->>API: POST /api/chat/agent/stream + session cookie
+    FE->>API: Send agent request with session cookie
     API->>LLM: Request structured routing decision
-    LLM-->>API: Proposed tool / response
-    API->>API: Parse and validate decision
+    LLM-->>API: Return proposed tool or response
+    API->>API: Validate decision against schema
+
     alt Tool requires approval
-        API->>Store: Save tool, args, session, expiry
-        API-->>FE: Stream pending action + approval token
-        FE-->>U: Show approval modal
-        U->>FE: Approve
-        FE->>API: POST /api/chat/agent/tools/execute + token + cookie
-        API->>Store: Validate token, session, expiry; consume token
-        API->>Tool: Execute server-stored tool arguments
-        Tool-->>API: Tool result
+        API->>Store: Store tool arguments and session details
+        API-->>FE: Stream pending action and approval token
+        FE-->>U: Display approval modal
+        U->>FE: Approve action
+        FE->>API: Submit approval token with session cookie
+        API->>Store: Validate token, session and expiry
+        API->>Store: Consume single-use token
+        API->>Tool: Execute approved tool
+        Tool-->>API: Return tool result
         API-->>FE: Return execution result
-    else No tool approval path
-        API-->>FE: Stream response / status events
+        FE-->>U: Display tool result
+    else No tool approval required
+        API-->>FE: Stream response and status events
+        FE-->>U: Display response
     end
 ```
+
 
 The currently registered tools are `get_system_specs`, `list_directory_safe`, `calculate_math`, and `get_current_time`. The controller validates the model's structured decision against a schema and the tool whitelist. Approval state is held in a process-local Map; it is not a durable or distributed job store.
 
